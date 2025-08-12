@@ -6,7 +6,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(cors()); // Додано для дозволу запитів з Netlify
+app.use(cors());
 
 let cachedData = { categories: [], items: [] };
 
@@ -33,7 +33,8 @@ async function parseXML(xmlData) {
                         description: item.description ? item.description[0] : '',
                         images: item.image || [],
                         sizes: {},
-                        maxId: 0
+                        maxId: 0,
+                        barcode: item.barcode ? item.barcode[0] : 'Немає артикула' // Додаємо barcode
                     });
                 }
                 const group = groups.get(groupId);
@@ -61,9 +62,10 @@ async function updateData() {
         const response = await axios.get('https://easydrop.one/prom-export?key=24481682017071&pid=32494472342744');
         const data = await parseXML(response.data);
         cachedData = data;
-        console.log('Data updated at', new Date());
+        console.log('Updated categories:', cachedData.categories.length);
+        console.log('Updated items:', cachedData.items.length);
     } catch (error) {
-        console.error('Error updating data:', error);
+        console.error('Error updating data:', error.message);
     }
 }
 
@@ -76,7 +78,7 @@ app.get('/api/products', (req, res) => {
 });
 
 updateData();
-setInterval(updateData, 1800000); // Кожні 30 хвилин
+setInterval(updateData, 1800000);
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
